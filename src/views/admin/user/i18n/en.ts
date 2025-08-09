@@ -1,0 +1,27 @@
+export default {
+	sysuser: {
+		index: '#',
+		name: 'username',
+		phone: 'phone',
+		post: 'post',
+		role: 'role',
+		lockFlag: 'lockFlag',
+		createTime: 'createTime',
+		lastActiveTime: 'lastActiveTime',
+		password: 'password',
+		dept: 'dept',
+		email: 'email',
+		nickname: 'nickname',
+		inputUsernameTip: 'input username',
+		inputEmailTip: 'input email',
+		inputNameTip: 'input name',
+		importUserTip: 'user import',
+		deleteDisabledTip: 'admin are not allowed to delete',
+		noDataScopeTip: 'no data permissions',
+	},
+	personal: {
+		name: 'personal info',
+		passwordRule: 'The two passwords are inconsistent',
+		passwordScore: 'Password level is too low',
+	},
+};

@@ -1,0 +1,193 @@
+<template>
+	<div v-if="isShowBreadcrumb" class="layout-navbars-breadcrumb">
+		<SvgIcon
+			class="layout-navbars-breadcrumb-icon"
+			:name="themeConfig.isCollapse ? 'ele-Expand' : 'ele-Fold'"
+			:size="16"
+			@click="onThemeConfigChange"
+		/>
+		<el-breadcrumb class="layout-navbars-breadcrumb-hide">
+			<transition-group name="breadcrumb">
+				<el-breadcrumb-item v-for="(v, k) in state.breadcrumbList" :key="!v.meta.tagsViewName ? v.name : v.meta.tagsViewName">
+					<span v-if="k === state.breadcrumbList.length - 1" class="layout-navbars-breadcrumb-span">
+						<SvgIcon :name="v.meta.icon" class="layout-navbars-breadcrumb-iconfont" v-if="themeConfig.isBreadcrumbIcon" />
+						<div v-if="!v.meta.tagsViewName">{{ other.setMenuI18n(v) }}</div>
+						<div v-else>{{ v.meta.tagsViewName }}</div>
+					</span>
+					<a v-else @click.prevent="onBreadcrumbClick(v)">
+						<SvgIcon :name="v.meta.icon" class="layout-navbars-breadcrumb-iconfont" v-if="themeConfig.isBreadcrumbIcon" />{{ other.setMenuI18n(v) }}
+					</a>
+				</el-breadcrumb-item>
+			</transition-group>
+		</el-breadcrumb>
+	</div>
+</template>
+
+<script setup lang="ts" name="layoutBreadcrumb">
+import { reactive, computed, onMounted } from 'vue';
+import { onBeforeRouteUpdate, RouteLocation, useRoute, useRouter } from 'vue-router';
+import { Local } from '/@/utils/storage';
+import other from '/@/utils/other';
+import { storeToRefs } from 'pinia';
+import { useThemeConfig } from '/@/stores/themeConfig';
+import { useRoutesList } from '/@/stores/routesList';
+
+// 定义变量内容
+const stores = useRoutesList();
+const storesThemeConfig = useThemeConfig();
+const { themeConfig } = storeToRefs(storesThemeConfig);
+const { routesList } = storeToRefs(stores);
+const route = useRoute();
+const router = useRouter();
+const state = reactive<BreadcrumbState>({
+	breadcrumbList: [],
+	routeSplit: [],
+	routeSplitFirst: '',
+	routeSplitIndex: 1,
+});
+
+// 动态设置经典、横向布局不显示
+const isShowBreadcrumb = computed(() => {
+	initRouteSplit(route);
+	const { layout, isBreadcrumb } = themeConfig.value;
+	if (layout === 'classic' ) return false;
+	else return isBreadcrumb ? true : false;
+});
+// 面包屑点击时
+const onBreadcrumbClick = (v: RouteItem) => {
+	const { redirect, path } = v;
+	if (redirect) router.push(redirect);
+	else router.push(path);
+};
+// 展开/收起左侧菜单点击
+const onThemeConfigChange = () => {
+	themeConfig.value.isCollapse = !themeConfig.value.isCollapse;
+	setLocalThemeConfig();
+};
+// 存储布局配置
+const setLocalThemeConfig = () => {
+	Local.remove('themeConfig');
+	Local.set('themeConfig', themeConfig.value);
+};
+// 处理面包屑数据
+const getBreadcrumbList = (arr: RouteItems) => {
+	arr.forEach((item: RouteItem) => {
+		state.routeSplit.forEach((v: string, k: number, arrs: string[]) => {
+			if (state.routeSplitFirst === item.path) {
+				state.routeSplitFirst += `/${arrs[state.routeSplitIndex]}`;
+				state.breadcrumbList.push(item);
+				state.routeSplitIndex++;
+				if (item.children) getBreadcrumbList(item.children);
+			}
+		});
+	});
+};
+// 当前路由字符串切割成数组，并删除第一项空内容
+const initRouteSplit = (toRoute: RouteLocation) => {
+	let path = toRoute.path;
+	if (!themeConfig.value.isBreadcrumb) return false;
+	state.breadcrumbList = [routesList.value[0]];
+	state.routeSplit = path.split('/');
+	state.routeSplit.shift();
+	state.routeSplitFirst = `/${state.routeSplit[0]}`;
+	state.routeSplitIndex = 1;
+	getBreadcrumbList(routesList.value);
+	state.breadcrumbList.push(route);
+	// 首页或异常页只显示第一个
+	if (toRoute.name === 'router.home' || (toRoute.name === 'staticRoutes.notFound' && state.breadcrumbList.length > 1)) {
+		state.breadcrumbList.splice(0, state.breadcrumbList.length - 1);
+	} else if (state.breadcrumbList.length > 0) {
+		state.breadcrumbList[state.breadcrumbList.length - 1].meta.tagsViewName = other.setMenuI18n(<RouteToFrom>route);
+	}
+};
+// 页面加载时
+onMounted(() => {
+	initRouteSplit(route);
+});
+// 路由更新时
+onBeforeRouteUpdate((to) => {
+	// 传入跳转的目标路由对象
+	initRouteSplit(to);
+});
+</script>
+
+<style scoped lang="scss">
+.layout-navbars-breadcrumb {
+	flex: 1;
+	height: inherit;
+	display: flex;
+	align-items: center;
+	padding: 0 10px;
+
+	.layout-navbars-breadcrumb-icon {
+		cursor: pointer;
+		font-size: 18px;
+		color: var(--next-bg-topBarColor);
+		height: 100%;
+		width: 40px;
+		opacity: 0.8;
+		transition: all 0.3s ease;
+
+		&:hover {
+			opacity: 1;
+			transform: scale(1.1);
+		}
+	}
+
+	.layout-navbars-breadcrumb-span {
+		display: flex;
+		align-items: center;
+		color: var(--next-bg-topBarColor);
+		padding: 4px 12px;
+		border-radius: 4px;
+		background: rgba(255, 255, 255, 0.1);
+		transition: all 0.3s ease;
+	}
+
+	.layout-navbars-breadcrumb-iconfont {
+		font-size: 14px;
+		margin-right: 5px;
+	}
+
+	:deep(.el-breadcrumb) {
+		display: flex;
+		align-items: center;
+		height: 100%;
+	}
+
+	:deep(.el-breadcrumb__item) {
+		display: flex;
+		align-items: center;
+		height: 100%;
+	}
+
+	:deep(.el-breadcrumb__separator) {
+		color: var(--next-bg-topBarColor);
+		opacity: 0.7;
+		margin: 0 8px;
+		font-weight: bold;
+	}
+
+	:deep(.el-breadcrumb__inner) {
+		display: flex;
+		align-items: center;
+		height: 100%;
+		padding: 0 8px;
+		transition: all 0.3s ease;
+	}
+
+	:deep(.el-breadcrumb__inner a, .el-breadcrumb__inner.is-link) {
+		font-weight: 500;
+		color: var(--next-bg-topBarColor);
+		padding: 4px 10px;
+		border-radius: 4px;
+		transition: all 0.3s ease;
+
+		&:hover {
+			color: var(--el-color-primary) !important;
+			background: rgba(255, 255, 255, 0.15);
+			transform: translateY(-1px);
+		}
+	}
+}
+</style>
