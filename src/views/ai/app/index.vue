@@ -55,25 +55,33 @@
 							icon="Plus" 
 							type="primary" 
 							@click="appDialogRef.openDialog()"
-							class="action-button primary-action"
+							class="action-button"
 						>
 							{{ $t('common.addBtn') }}
 						</el-button>
 						<el-button 
 							icon="Upload" 
 							type="success"
-							class="action-button primary-action"
-							@click="handleImport"
+							class="action-button"
+							@click="handleImportDify"
 						>
-							{{ $t('app.importDSLBtn') }}
+							导入Dify
 						</el-button>
 						<el-button 
-							icon="DocumentAdd" 
+							icon="Upload" 
 							type="warning"
-							class="action-button primary-action"
-							@click="handleCreateFromTemplate"
+							class="action-button"
+							@click="handleImportCoze"
 						>
-							{{ $t('app.createFromTemplateBtn') }}
+							导入Coze
+						</el-button>
+						<el-button 
+							icon="Upload" 
+							type="danger"
+							class="action-button"
+							@click="handleImportN8N"
+						>
+							导入N8N
 						</el-button>
 					</el-button-group>
 					
@@ -253,14 +261,20 @@ const handleDelete = async (id: string) => {
 	}
 };
 
-const handleImport = () => {
-  useMessage().success(t('开发中，敬请期待'));
-  // TODO: 实现导入功能
+
+
+const handleImportDify = () => {
+  appDialogRef.value.openDialog(null, 'import');
 };
 
-const handleCreateFromTemplate = () => {
+const handleImportCoze = () => {
   useMessage().success(t('开发中，敬请期待'));
-  // TODO: 实现从模板创建功能
+  // TODO: 实现导入Coze功能
+};
+
+const handleImportN8N = () => {
+  useMessage().success(t('开发中，敬请期待'));
+  // TODO: 实现导入N8N功能
 };
 
 

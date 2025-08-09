@@ -37,3 +37,10 @@ export const putObj = (id: String, obj: Object) => {
 		data: obj,
 	});
 };
+
+export const queryDifyAppByApiKeyApi = (apiKey: String,baseUrl: String) => {
+	return request({
+		url: '/dify/apps?apiKey=' + apiKey+'&baseUrl=' + baseUrl,
+		method: 'get',
+	});
+};

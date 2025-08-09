@@ -10,6 +10,17 @@
 		>
 			<el-form :model="dataForm" :rules="dataRules" label-width="90px" ref="dataFormRef" v-loading="loading">
 				<el-row :gutter="20">
+
+          		<el-col :span="24" class="mb20" v-if="dataForm.id === ''">
+						<el-form-item label="提供商" prop="provider">
+							<el-select v-model="dataForm.provider" placeholder="请选择应用提供商" class="w100" clearable>
+								<el-option label="Dify" value="dify" />
+								<el-option label="N8N" value="n8n" />
+								<el-option label="Coze" value="coze" />
+							</el-select>
+						</el-form-item>
+					</el-col>
+
 					<el-col :span="24" class="mb20">
 						<el-form-item :label="$t('app.name')" prop="name">
 							<el-input placeholder="请输入应用名称" v-model="dataForm.name"></el-input>
@@ -29,6 +40,22 @@
 								<el-option v-for="item in modeData" :key="item.value" :label="item.label" :value="item.value" />
 							</el-select>
 							</el-tooltip>
+						</el-form-item>
+					</el-col>
+
+          	<el-col :span="24" class="mb20" v-if="dataForm.provider === 'dify'">
+						<el-form-item label="API密钥" prop="apiKey">
+							<el-input placeholder="请输入API密钥" v-model="dataForm.apiKey">
+								<template #append>
+									<el-button @click="queryDifyAppByApiKey" :disabled="!dataForm.apiKey" type="primary" size="small" plain>查询Dify</el-button>
+								</template>
+							</el-input>
+						</el-form-item>
+					</el-col>
+
+      <el-col :span="24" class="mb20">
+						<el-form-item :label="$t('provider.baseUrl')" prop="base_url">
+							<el-input placeholder="请输入API基础URL" v-model="dataForm.base_url"></el-input>
 						</el-form-item>
 					</el-col>
 
@@ -58,6 +85,9 @@
 							<el-input :rows="4" type="textarea" placeholder="请输入应用描述" v-model="dataForm.description"></el-input>
 						</el-form-item>
 					</el-col>
+
+	
+
 				</el-row>
 			</el-form>
 			<template #footer>
@@ -71,7 +101,7 @@
 </template>
 
 <script lang="ts" name="systemUserDialog" setup>
-import { addObj, getObj, putObj } from '/@/api/app/index';
+import { addObj, getObj, putObj, queryDifyAppByApiKeyApi } from '/@/api/app/index';
 import { list } from '/@/api/admin/role';
 import { useI18n } from 'vue-i18n';
 import { useMessage } from '/@/hooks/message';
@@ -111,6 +141,9 @@ const dataForm = reactive({
 	role_ids: [] as string[],
 	enableSite: false,
 	enableApi: false,
+	provider: '',
+	apiKey: '',
+  base_url: '',
 });
 
 
@@ -126,16 +159,22 @@ const dataRules = ref({
 	name: [{ required: true, message: '应用名称不能为空', trigger: 'blur' }],
 	mode: [{ required: true, message: '应用模式不能为空', trigger: 'change' }],
 	role_ids: [{ required: true, message: '请选择关联角色', trigger: 'change' }],
+	provider: [{ required: true, message: '请选择应用提供商', trigger: 'change' }],
+	apiKey: [{ required: dataForm.provider === 'dify', message: 'API密钥不能为空', trigger: 'blur' }],
+  base_url: [{ required: true, message: 'API基础URL不能为空', trigger: 'blur' }],
 });
 
 // 打开弹窗
-const openDialog = async (id: string) => {
+const openDialog = async (id: string, type: string = '') => {
 	visible.value = true;
 	dataForm.id = '';
 
 	// 重置表单数据
 	nextTick(() => {
 		dataFormRef.value?.resetFields();
+		if (type === 'import') {
+			dataForm.provider = 'dify';
+		}
 	});
 
 	// 获取角色列表并等待完成
@@ -176,6 +215,32 @@ const onSubmit = async () => {
 		}
 	} catch (error: any) {
 		useMessage().error(error.message);
+	} finally {
+		loading.value = false;
+	}
+};
+
+const queryDifyAppByApiKey = async () => {
+	if (!dataForm.apiKey) {
+		useMessage().error('API密钥不能为空');
+		return;
+	}
+  	if (!dataForm.base_url) {
+		useMessage().error('基础URL不能为空');
+		return;
+	}
+	try {
+		loading.value = true;
+		const res = await queryDifyAppByApiKeyApi(dataForm.apiKey, dataForm.base_url);
+		//if (res.data) {
+			// 回填表单数据
+			dataForm.name = res.name || '';
+			dataForm.mode = res.mode || '';
+			dataForm.description = res.description || '';
+		//}
+		useMessage().success('查询成功');
+	} catch (error: any) {
+		useMessage().error(error.message || '查询失败');
 	} finally {
 		loading.value = false;
 	}
