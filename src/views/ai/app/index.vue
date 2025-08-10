@@ -142,6 +142,7 @@
 		</div>
 
 		<user-form ref="appDialogRef" @refresh="initData()" />
+		<dify-import ref="difyImportRef" @refresh="initData()" />
 	</div>
 </template>
 
@@ -152,6 +153,7 @@ import { useI18n } from 'vue-i18n';
 
 // 动态引入组件
 const UserForm = defineAsyncComponent(() => import('./form.vue'));
+const DifyImport = defineAsyncComponent(() => import('./dify-import.vue'));
 
 const { t } = useI18n();
 
@@ -263,8 +265,10 @@ const handleDelete = async (id: string) => {
 
 
 
+const difyImportRef = ref();
+
 const handleImportDify = () => {
-  appDialogRef.value.openDialog(null, 'import');
+  difyImportRef.value.openDialog();
 };
 
 const handleImportCoze = () => {

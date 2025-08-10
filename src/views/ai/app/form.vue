@@ -2,14 +2,34 @@
 	<div class="app-form-dialog-container">
 		<el-dialog 
 			:close-on-click-modal="false" 
-			:title="dataForm.id ? $t('common.editBtn') : $t('common.addBtn')" 
+			:title="dataForm.id ? $t('common.editBtn') : importStep === 1 ? 'Dify导入 - 第一步' : 'Dify导入 - 第二步'" 
 			draggable 
 			v-model="visible"
 			class="app-form-dialog"
 			width="700px"
 		>
+			<div v-if="!dataForm.id && importStep > 0" class="steps-container">
+				<el-steps :active="importStep" align-center>
+					<el-step title="输入API信息" />
+					<el-step title="填写应用信息" />
+				</el-steps>
+			</div>
 			<el-form :model="dataForm" :rules="dataRules" label-width="90px" ref="dataFormRef" v-loading="loading">
-				<el-row :gutter="20">
+				<template v-if="importStep === 1">
+					<el-row :gutter="20">
+						<el-col :span="24" class="mb20">
+							<el-form-item label="API密钥" prop="apiKey" required>
+								<el-input v-model="dataForm.api_key" placeholder="请输入Dify API密钥" clearable />
+							</el-form-item>
+						</el-col>
+						<el-col :span="24" class="mb20">
+							<el-form-item label="基础URL" prop="base_url" required>
+								<el-input v-model="dataForm.base_url" placeholder="请输入Dify API基础URL" clearable />
+							</el-form-item>
+						</el-col>
+					</el-row>
+				</template>
+				<el-row :gutter="20" v-else>
 
           		<el-col :span="24" class="mb20" v-if="dataForm.id === ''">
 						<el-form-item label="提供商" prop="provider">
@@ -44,17 +64,17 @@
 					</el-col>
 
           	<el-col :span="24" class="mb20" v-if="dataForm.provider === 'dify'">
-						<el-form-item label="API密钥" prop="apiKey">
-							<el-input placeholder="请输入API密钥" v-model="dataForm.apiKey">
+						<el-form-item label="API密钥" prop="apiKey" required>
+							<el-input placeholder="请输入API密钥" v-model="dataForm.api_key">
 								<template #append>
-									<el-button @click="queryDifyAppByApiKey" :disabled="!dataForm.apiKey" type="primary" size="small" plain>查询Dify</el-button>
+									<el-button @click="queryDifyAppByApiKey" :disabled="!dataForm.api_key" type="primary" size="small" plain>查询Dify</el-button>
 								</template>
 							</el-input>
 						</el-form-item>
 					</el-col>
 
-      <el-col :span="24" class="mb20">
-						<el-form-item :label="$t('provider.baseUrl')" prop="base_url">
+      <el-col :span="24" class="mb20" v-if="dataForm.provider === 'dify'">
+						<el-form-item :label="$t('provider.baseUrl')" prop="base_url" required>
 							<el-input placeholder="请输入API基础URL" v-model="dataForm.base_url"></el-input>
 						</el-form-item>
 					</el-col>
@@ -82,7 +102,7 @@
 
 					<el-col :span="24" class="mb20">
 						<el-form-item :label="$t('app.appDescription')" prop="description">
-							<el-input :rows="4" type="textarea" placeholder="请输入应用描述" v-model="dataForm.description"></el-input>
+							<el-input :rows="6" type="textarea" placeholder="请输入应用描述" v-model="dataForm.description"></el-input>
 						</el-form-item>
 					</el-col>
 
@@ -93,7 +113,8 @@
 			<template #footer>
 				<span class="dialog-footer">
 					<el-button @click="visible = false">{{ $t('common.cancelButtonText') }}</el-button>
-					<el-button @click="onSubmit" type="primary" :disabled="loading">{{ $t('common.confirmButtonText') }}</el-button>
+					<el-button v-if="importStep === 1" @click="queryDifyAppByApiKey" type="primary" :disabled="loading">下一步</el-button>
+					<el-button v-else @click="onSubmit" type="primary" :disabled="loading">{{ $t('common.confirmButtonText') }}</el-button>
 				</span>
 			</template>
 		</el-dialog>
@@ -133,6 +154,8 @@ const dataFormRef = ref();
 const visible = ref(false);
 const loading = ref(false);
 
+const importStep = ref(0); // 0: 未开始, 1: 第一步, 2: 第二步
+
 const dataForm = reactive({
 	id: '',
 	description: '',
@@ -142,7 +165,7 @@ const dataForm = reactive({
 	enableSite: false,
 	enableApi: false,
 	provider: '',
-	apiKey: '',
+	api_key: '',
   base_url: '',
 });
 
@@ -160,19 +183,20 @@ const dataRules = ref({
 	mode: [{ required: true, message: '应用模式不能为空', trigger: 'change' }],
 	role_ids: [{ required: true, message: '请选择关联角色', trigger: 'change' }],
 	provider: [{ required: true, message: '请选择应用提供商', trigger: 'change' }],
-	apiKey: [{ required: dataForm.provider === 'dify', message: 'API密钥不能为空', trigger: 'blur' }],
-  base_url: [{ required: true, message: 'API基础URL不能为空', trigger: 'blur' }],
+	api_key: [{ required: dataForm.provider === 'dify', message: 'API密钥不能为空', trigger: 'blur' }],
+  base_url: [{ required: dataForm.provider === 'dify', message: 'API基础URL不能为空', trigger: 'blur' }],
 });
 
 // 打开弹窗
 const openDialog = async (id: string, type: string = '') => {
 	visible.value = true;
 	dataForm.id = '';
+	importStep.value = type === 'importDify' ? 1 : 0;
 
 	// 重置表单数据
 	nextTick(() => {
 		dataFormRef.value?.resetFields();
-		if (type === 'import') {
+		if (type === 'importDify') {
 			dataForm.provider = 'dify';
 		}
 	});
@@ -221,23 +245,21 @@ const onSubmit = async () => {
 };
 
 const queryDifyAppByApiKey = async () => {
-	if (!dataForm.apiKey) {
-		useMessage().error('API密钥不能为空');
-		return;
-	}
-  	if (!dataForm.base_url) {
-		useMessage().error('基础URL不能为空');
+	if (!dataForm.api_key || !dataForm.base_url) {
+		useMessage().error('API密钥和基础URL不能为空');
 		return;
 	}
 	try {
 		loading.value = true;
-		const res = await queryDifyAppByApiKeyApi(dataForm.apiKey, dataForm.base_url);
-		//if (res.data) {
+		const res = await queryDifyAppByApiKeyApi(dataForm.api_key, dataForm.base_url);
+		if (res.data) {
 			// 回填表单数据
-			dataForm.name = res.name || '';
-			dataForm.mode = res.mode || '';
-			dataForm.description = res.description || '';
-		//}
+			dataForm.name = res.data.name || '';
+			dataForm.mode = res.data.mode || '';
+			dataForm.description = res.data.description || '';
+			dataForm.provider = 'dify'; // 显示应用提供商
+			importStep.value = 2; // 进入第二步
+		}
 		useMessage().success('查询成功');
 	} catch (error: any) {
 		useMessage().error(error.message || '查询失败');
