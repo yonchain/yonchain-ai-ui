@@ -2,38 +2,19 @@
 	<div class="app-form-dialog-container">
 		<el-dialog 
 			:close-on-click-modal="false" 
-			:title="dataForm.id ? $t('common.editBtn') : importStep === 1 ? 'Dify导入 - 第一步' : 'Dify导入 - 第二步'" 
+			:title="dataForm.id ? $t('common.editBtn') :  $t('common.addBtn')" 
 			draggable 
 			v-model="visible"
 			class="app-form-dialog"
 			width="700px"
 		>
-			<div v-if="!dataForm.id && importStep > 0" class="steps-container">
-				<el-steps :active="importStep" align-center>
-					<el-step title="输入API信息" />
-					<el-step title="填写应用信息" />
-				</el-steps>
-			</div>
+			
 			<el-form :model="dataForm" :rules="dataRules" label-width="90px" ref="dataFormRef" v-loading="loading">
-				<template v-if="importStep === 1">
-					<el-row :gutter="20">
-						<el-col :span="24" class="mb20">
-							<el-form-item label="API密钥" prop="apiKey" required>
-								<el-input v-model="dataForm.api_key" placeholder="请输入Dify API密钥" clearable />
-							</el-form-item>
-						</el-col>
-						<el-col :span="24" class="mb20">
-							<el-form-item label="基础URL" prop="base_url" required>
-								<el-input v-model="dataForm.base_url" placeholder="请输入Dify API基础URL" clearable />
-							</el-form-item>
-						</el-col>
-					</el-row>
-				</template>
-				<el-row :gutter="20" v-else>
+				<el-row :gutter="20" >
 
-          		<el-col :span="24" class="mb20" v-if="dataForm.id === ''">
+          		<el-col :span="24" class="mb20">
 						<el-form-item label="提供商" prop="provider">
-							<el-select v-model="dataForm.provider" placeholder="请选择应用提供商" class="w100" clearable>
+							<el-select v-model="dataForm.provider" placeholder="请选择应用提供商" class="w100" :disabled="!!dataForm.id" clearable>
 								<el-option label="Dify" value="dify" />
 								<el-option label="N8N" value="n8n" />
 								<el-option label="Coze" value="coze" />
@@ -63,17 +44,13 @@
 						</el-form-item>
 					</el-col>
 
-          	<el-col :span="24" class="mb20" v-if="dataForm.provider === 'dify'">
-						<el-form-item label="API密钥" prop="apiKey" required>
-							<el-input placeholder="请输入API密钥" v-model="dataForm.api_key">
-								<template #append>
-									<el-button @click="queryDifyAppByApiKey" :disabled="!dataForm.api_key" type="primary" size="small" plain>查询Dify</el-button>
-								</template>
-							</el-input>
+          			<el-col :span="24" class="mb20" v-if="dataForm.provider === 'dify'">
+						<el-form-item label="API密钥" prop="api_key" required>
+							<el-input placeholder="请输入API密钥" v-model="dataForm.api_key" :disabled="!!dataForm.id"></el-input>
 						</el-form-item>
 					</el-col>
 
-      <el-col :span="24" class="mb20" v-if="dataForm.provider === 'dify'">
+      				<el-col :span="24" class="mb20" v-if="dataForm.provider === 'dify'">
 						<el-form-item :label="$t('provider.baseUrl')" prop="base_url" required>
 							<el-input placeholder="请输入API基础URL" v-model="dataForm.base_url"></el-input>
 						</el-form-item>
@@ -113,8 +90,7 @@
 			<template #footer>
 				<span class="dialog-footer">
 					<el-button @click="visible = false">{{ $t('common.cancelButtonText') }}</el-button>
-					<el-button v-if="importStep === 1" @click="queryDifyAppByApiKey" type="primary" :disabled="loading">下一步</el-button>
-					<el-button v-else @click="onSubmit" type="primary" :disabled="loading">{{ $t('common.confirmButtonText') }}</el-button>
+					<el-button @click="onSubmit" type="primary" :disabled="loading">{{ $t('common.confirmButtonText') }}</el-button>
 				</span>
 			</template>
 		</el-dialog>
@@ -198,6 +174,8 @@ const openDialog = async (id: string, type: string = '') => {
 		dataFormRef.value?.resetFields();
 		if (type === 'importDify') {
 			dataForm.provider = 'dify';
+			dataForm.api_key = '';
+			dataForm.base_url = '';
 		}
 	});
 
@@ -211,6 +189,9 @@ const openDialog = async (id: string, type: string = '') => {
 		dataForm.name = res.name;
 		dataForm.mode = res.mode;
 		dataForm.description = res.description;
+		dataForm.provider = res.provider || '';
+		dataForm.api_key = res.api_key || '';
+		dataForm.base_url = res.base_url || '';
 		// 直接使用接口返回的角色ID数组
 		dataForm.role_ids = res.role_ids || [];
 	}

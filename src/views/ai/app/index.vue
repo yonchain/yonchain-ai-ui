@@ -113,6 +113,14 @@
 							>
 								{{ getModeLabel(item.mode) }}
 							</el-tag>
+							<el-tag 
+								v-if="item.provider"
+								type="primary"
+								effect="dark"
+								class="mt-[8px] ml-[8px] font-medium"
+							>
+								{{ item.provider }}
+							</el-tag>
 							<div v-if="item.roles?.length" class="mt-[8px]">
 								<el-tag 
 									v-for="role in item.roles" 
@@ -129,7 +137,24 @@
 					</div>
 					<div class="mt-[12px] text-[#677182] line-clamp-2 overflow-hidden text-ellipsis" style="max-height: 3em;">{{ item.description || '-' }}</div>
 					<div class="app-actions">
-						<el-button type="success" size="small" icon="MagicStick" @click.stop="openAppDetail(item.id)">{{ $t('app.designBtn') }}</el-button>
+						<el-button 
+	type="success" 
+	size="small" 
+	icon="TopRight" 
+	@click.stop="openAppDetail(item.id)"
+	v-if="item.provider === 'dify'"
+>
+	Dify
+</el-button>
+<el-button 
+	type="success" 
+	size="small" 
+	icon="MagicStick" 
+	@click.stop="openAppDetail(item.id)"
+	v-else
+>
+	{{ $t('app.designBtn') }}
+</el-button>
 						<el-button type="primary" size="small" icon="Edit" @click.stop="appDialogRef.openDialog(item.id)">{{ $t('common.editBtn') }}</el-button>
 						<el-button type="danger" size="small" icon="Delete" @click.stop="handleDelete(item.id)">{{ $t('common.delBtn') }}</el-button>
 					</div>

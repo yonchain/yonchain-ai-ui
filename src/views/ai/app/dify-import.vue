@@ -132,7 +132,8 @@ const formData = reactive({
   name: '',
   mode: '',
   description: '',
-  role_ids: []
+  role_ids: [],
+  provider: 'dify'
 });
 
 const formRules = {

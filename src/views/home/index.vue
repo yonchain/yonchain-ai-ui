@@ -76,7 +76,7 @@
 </template>
 
 <script lang="ts" name="systemUser" setup>
-import { getInstalledApps } from '/@/api/app/installed-apps';
+import { pageList } from '/@/api/app/index';
 import { onMounted, ref, onUnmounted, watch } from 'vue';
 import { debounce } from 'lodash-es';
 import { ArrowDown } from '@element-plus/icons-vue';
@@ -164,7 +164,7 @@ const loadMore = async () => {
 	loading.value = true;
 	
 	try {
-		const res = await getInstalledApps({ 
+		const res = await pageList({ 
 			page: page.value, 
 			limit,
 			name: queryForm.value.name,
